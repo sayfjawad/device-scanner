@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AirodumpCsvParser {
 
+    public static final String MAC_ADDRESS_MATCHER_REGEX = "[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}";
+
     public List<DeviceRecord> parse(File csvFile, LocalDateTime timestamp) {
         List<DeviceRecord> devices = new ArrayList<>();
 
@@ -65,7 +67,7 @@ public class AirodumpCsvParser {
     }
 
     private boolean isMacAddress(String s) {
-        return s.matches("([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}");
+        return s.matches("(" + MAC_ADDRESS_MATCHER_REGEX);
     }
 
     private boolean isValidSignal(String signal) {
