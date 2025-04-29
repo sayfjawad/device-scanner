@@ -11,9 +11,10 @@ import java.util.Map;
 
 public class WifiAirodumpScanner {
 
+  private static final String OUTPUT_CSV = "/opt/device-scanner/data/devices-data.csv";
+  private static final String TEMP_SCAN_FILE = "/tmp/scan"; // This is fine
+
   private static final String INTERFACE = "wlan1"; // WiFi interface name
-  private static final String TEMP_SCAN_FILE = "/tmp/scan";
-  private static final String OUTPUT_CSV = "device_log.csv"; // Final output file
   private static final int SCAN_DURATION_SECONDS = 60; // How long to scan each time
   private static final int PAUSE_BETWEEN_SCANS_MS = 2000; // Optional small pause
 
