@@ -1,9 +1,14 @@
 package nl.multicode.devicescanner;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class WifiAirodumpScanner {
 
@@ -61,7 +66,9 @@ public class WifiAirodumpScanner {
 
       while ((line = reader.readLine()) != null) {
         line = line.trim();
-        if (line.isEmpty()) continue;
+        if (line.isEmpty()) {
+          continue;
+        }
         if (line.startsWith("Station MAC")) {
           readingStations = true;
           continue;
@@ -89,14 +96,19 @@ public class WifiAirodumpScanner {
   private static void writeDevicesToCsv(Map<String, String> devices) {
     boolean fileExists = new File(OUTPUT_CSV).exists();
     DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    String now = LocalDateTime.now().toString(); // Je zou ISO 8601 met zone kunnen gebruiken als nodig
+    String now = LocalDateTime.now()
+        .toString(); // Je zou ISO 8601 met zone kunnen gebruiken als nodig
 
     try (FileWriter writer = new FileWriter(OUTPUT_CSV, true)) {
       if (!fileExists) {
-        writer.write("mac,signal_strength,date_time\n"); // Schrijf header als bestand nieuw is
+        String csvHeader = "mac,signal_strength,date_time\n";
+        writer.write(csvHeader);
+        System.out.println("Writing " + csvHeader + " to " + OUTPUT_CSV);
       }
       for (Map.Entry<String, String> device : devices.entrySet()) {
-        writer.write(String.format("%s,%s,%s\n", device.getKey(), device.getValue(), now));
+        String formatted = String.format("%s,%s,%s\n", device.getKey(), device.getValue(), now);
+        writer.write(formatted);
+        System.out.println("Writing " + formatted + " to " + OUTPUT_CSV);
       }
     } catch (IOException e) {
       e.printStackTrace();
