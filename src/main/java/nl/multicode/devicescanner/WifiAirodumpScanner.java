@@ -1,9 +1,13 @@
 package nl.multicode.devicescanner;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class WifiAirodumpScanner {
 
@@ -64,7 +68,9 @@ public class WifiAirodumpScanner {
 
       while ((line = reader.readLine()) != null) {
         line = line.trim();
-        if (line.isEmpty()) continue;
+        if (line.isEmpty()) {
+          continue;
+        }
 
         if (line.startsWith("Station MAC")) {
           readingStations = true;
