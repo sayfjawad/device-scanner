@@ -1,117 +1,152 @@
 package nl.multicode.devicescanner;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class WifiAirodumpScanner {
 
-  private static final String INTERFACE = "wlan1"; // Jouw WiFi interface
-  private static final String OUTPUT_CSV = "device_log.csv"; // Output bestand
-  private static final int SCAN_DURATION_SECONDS = 60; // Scan duur in seconden
+  private static final String INTERFACE = "wlan1"; // WiFi interface name
+  private static final String TEMP_SCAN_FILE = "/tmp/scan";
+  private static final String OUTPUT_CSV = "device_log.csv"; // Final output file
+  private static final int SCAN_DURATION_SECONDS = 60; // How long to scan each time
+  private static final int PAUSE_BETWEEN_SCANS_MS = 2000; // Optional small pause
 
   public static void main(String[] args) {
     while (true) {
       try {
-        System.out.println("Nieuwe scan gestart om: " + LocalDateTime.now());
-        Map<String, String> devices = scanWifiDevices();
-        writeDevicesToCsv(devices);
-        System.out.println("Aantal gevonden devices: " + devices.size());
+        System.out.println("Starting new scan at: " + LocalDateTime.now());
+
+        startAirodumpScan();
+        Map<String, String> devices = parseScanResults();
+        saveDevicesToCsv(devices);
+
+        System.out.println("Devices found: " + devices.size());
       } catch (Exception e) {
         e.printStackTrace();
       }
 
-      // Eventueel korte pauze tussen scans
-      try {
-        Thread.sleep(2000); // 2 seconden wachten voor volgende scan
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
+      pauseBeforeNextScan();
     }
   }
 
-  private static Map<String, String> scanWifiDevices() throws Exception {
-    Map<String, String> devices = new HashMap<>();
-    String scanFile = "/tmp/scan";
-
-    // Start airodump-ng
+  private static void startAirodumpScan() throws IOException, InterruptedException {
     ProcessBuilder pb = new ProcessBuilder(
         "sudo", "airodump-ng",
         "--write-interval", "1",
         "--output-format", "csv",
-        "-w", scanFile,
+        "-w", TEMP_SCAN_FILE,
         INTERFACE
     );
     Process process = pb.start();
 
-    // Laat het proces lopen voor een bepaalde tijd
+    // Let it scan for the desired duration
     Thread.sleep(SCAN_DURATION_SECONDS * 1000);
 
-    // Stop het proces netjes
+    // Kill the process after scan duration
     process.destroy();
     process.waitFor();
+  }
 
-    // Parse het gegenereerde CSV bestand
-    File csvFile = new File("/tmp/scan-01.csv");
-    if (csvFile.exists()) {
-      BufferedReader reader = new BufferedReader(new FileReader(csvFile));
+  private static Map<String, String> parseScanResults() {
+    Map<String, String> devices = new HashMap<>();
+    File csvFile = new File(TEMP_SCAN_FILE + "-01.csv");
+
+    if (!csvFile.exists()) {
+      System.err.println("Scan file not found: " + csvFile.getAbsolutePath());
+      return devices;
+    }
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
       String line;
       boolean readingStations = false;
 
       while ((line = reader.readLine()) != null) {
         line = line.trim();
-        if (line.isEmpty()) {
-          continue;
-        }
+        if (line.isEmpty()) continue;
+
         if (line.startsWith("Station MAC")) {
           readingStations = true;
           continue;
         }
-        if (readingStations) {
-          String[] parts = line.split(",");
-          if (parts.length >= 4) {
+
+        String[] parts = line.split(",");
+
+        if (!readingStations) {
+          // Parsing Access Points
+          if (parts.length > 8 && isMacAddress(parts[0])) {
             String mac = parts[0].trim();
-            String signal = parts[3].trim(); // Signaalsterkte veld
-            devices.put(mac, signal);
+            String signal = parts[8].trim();
+            if (isValidSignal(signal)) {
+              devices.put(mac, signal);
+            }
+          }
+        } else {
+          // Parsing Stations (clients)
+          if (parts.length > 3 && isMacAddress(parts[0])) {
+            String mac = parts[0].trim();
+            String signal = parts[3].trim();
+            if (isValidSignal(signal)) {
+              devices.put(mac, signal);
+            }
           }
         }
       }
-      reader.close();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
-    // Verwijder oude scan files zodat volgende scan opnieuw kan
-    new File("/tmp/scan-01.csv").delete();
-    new File("/tmp/scan-01.kismet.csv").delete();
-    new File("/tmp/scan-01.kismet.netxml").delete();
-
+    cleanupTemporaryFiles();
     return devices;
   }
 
-  private static void writeDevicesToCsv(Map<String, String> devices) {
+  private static void saveDevicesToCsv(Map<String, String> devices) {
     boolean fileExists = new File(OUTPUT_CSV).exists();
-    DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    String now = LocalDateTime.now()
-        .toString(); // Je zou ISO 8601 met zone kunnen gebruiken als nodig
+    String currentTime = LocalDateTime.now().toString(); // ISO 8601 format
 
     try (FileWriter writer = new FileWriter(OUTPUT_CSV, true)) {
       if (!fileExists) {
-        String csvHeader = "mac,signal_strength,date_time\n";
-        writer.write(csvHeader);
-        System.out.println("Writing " + csvHeader + " to " + OUTPUT_CSV);
+        writer.write("mac,signal_strength,date_time\n");
       }
       for (Map.Entry<String, String> device : devices.entrySet()) {
-        String formatted = String.format("%s,%s,%s\n", device.getKey(), device.getValue(), now);
-        writer.write(formatted);
-        System.out.println("Writing " + formatted + " to " + OUTPUT_CSV);
+        String line = String.format("%s,%s,%s\n", device.getKey(), device.getValue(), currentTime);
+        writer.write(line);
       }
     } catch (IOException e) {
       e.printStackTrace();
+    }
+  }
+
+  private static void pauseBeforeNextScan() {
+    try {
+      Thread.sleep(PAUSE_BETWEEN_SCANS_MS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      System.err.println("Sleep interrupted: " + e.getMessage());
+    }
+  }
+
+  private static boolean isMacAddress(String s) {
+    return s.matches("([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}");
+  }
+
+  private static boolean isValidSignal(String signal) {
+    return !signal.isEmpty() && !signal.equals("-1");
+  }
+
+  private static void cleanupTemporaryFiles() {
+    deleteFileQuietly(TEMP_SCAN_FILE + "-01.csv");
+    deleteFileQuietly(TEMP_SCAN_FILE + "-01.kismet.csv");
+    deleteFileQuietly(TEMP_SCAN_FILE + "-01.kismet.netxml");
+  }
+
+  private static void deleteFileQuietly(String path) {
+    File file = new File(path);
+    if (file.exists()) {
+      if (!file.delete()) {
+        System.err.println("Failed to delete temp file: " + path);
+      }
     }
   }
 }
