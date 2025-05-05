@@ -13,11 +13,18 @@ Scan WiFi and BlueTooth devices nearby
 sudo apt update
 sudo apt install aircrack-ng
 ```
-* configure your wifi-adapter to monitor mode
+* configure your wifi-adapter to monitor mode 
+* <substitute wlan0 with actual wlan adapter address, use ifconfig!>
 ```shell
 sudo ifconfig wlan0 down
 sudo iwconfig wlan0 mode monitor
 sudo ifconfig wlan0 up
+sudo visudo -f /etc/sudoers.d/airodump
+# add following line ans substitute username with your own
+<your username> ALL=(ALL) NOPASSWD: /usr/sbin/airodump-ng *
+
+sudo mkdir /opt/device-scanner/data
+sudo chown -R <your username>:<your usergroup> /opt/device-scanner/data
 ```
 * verify it is working
 ```shell
