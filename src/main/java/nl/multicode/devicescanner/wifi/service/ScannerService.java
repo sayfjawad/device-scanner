@@ -1,12 +1,12 @@
-package nl.multicode.devicescanner.service;
+package nl.multicode.devicescanner.wifi.service;
 
 import java.io.File;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.multicode.devicescanner.config.DeviceScannerConfig;
-import nl.multicode.devicescanner.model.DeviceRecord;
-import nl.multicode.devicescanner.scanner.WifiScanner;
+import nl.multicode.devicescanner.wifi.model.DeviceRecord;
+import nl.multicode.devicescanner.wifi.scanner.WifiScanner;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 

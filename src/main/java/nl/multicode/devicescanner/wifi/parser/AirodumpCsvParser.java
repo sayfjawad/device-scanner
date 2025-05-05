@@ -1,6 +1,6 @@
-package nl.multicode.devicescanner.parser;
+package nl.multicode.devicescanner.wifi.parser;
 
-import nl.multicode.devicescanner.model.DeviceRecord;
+import nl.multicode.devicescanner.wifi.model.DeviceRecord;
 
 import java.io.BufferedReader;
 import java.io.File;

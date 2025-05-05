@@ -1,8 +1,8 @@
-package nl.multicode.devicescanner.scanner;
+package nl.multicode.devicescanner.wifi.scanner;
 
 import lombok.RequiredArgsConstructor;
-import nl.multicode.devicescanner.model.DeviceRecord;
-import nl.multicode.devicescanner.parser.AirodumpCsvParser;
+import nl.multicode.devicescanner.wifi.model.DeviceRecord;
+import nl.multicode.devicescanner.wifi.parser.AirodumpCsvParser;
 
 import java.io.File;
 import java.io.IOException;

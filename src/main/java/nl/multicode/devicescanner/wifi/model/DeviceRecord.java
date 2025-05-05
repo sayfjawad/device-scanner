@@ -1,4 +1,4 @@
-package nl.multicode.devicescanner.model;
+package nl.multicode.devicescanner.wifi.model;
 
 import java.time.LocalDateTime;
 import lombok.Builder;

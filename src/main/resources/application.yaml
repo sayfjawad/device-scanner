@@ -1,6 +1,6 @@
 
 scanner:
-  interface: wlxd03745acbed8
+  interface-name: wlxd03745acbed8
   output-file: /opt/device-scanner/data/devices-data.csv
   scan-duration: 60
   pause-duration: 2000
