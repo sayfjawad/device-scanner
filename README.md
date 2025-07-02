@@ -30,6 +30,16 @@ sudo chown -R <your username>:<your usergroup> /opt/device-scanner/data
 ```shell
 iwconfig
 ```
+# Optional - GPS
+## install GPS dongle and daemon
+```shell
+sudo apt install gpsd gpsd-clients
+sudo gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
+```
+## check if GPS works
+```shell
+cgps
+```
 
 ## troubleshoot
 if you encounter the following error then you probably need a usb-wifi adapter with monitor support because your current wifi-device does not support monitor mode

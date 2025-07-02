@@ -10,7 +10,7 @@ public class AccessPointMapper {
 
     public AccessPoint map(final String[] tokens) {
 
-        AccessPoint ap = AccessPoint.builder()
+        return AccessPoint.builder()
                 .bssid(tokens[0].trim())
                 .firstSeen(tokens[1].trim())
                 .lastSeen(tokens[2].trim())
@@ -27,7 +27,6 @@ public class AccessPointMapper {
                 .essid((tokens[13].trim()))
                 .key(tokens[14].trim())
                 .build();
-        return ap;
     }
 
     private int parseInt(String s) {
