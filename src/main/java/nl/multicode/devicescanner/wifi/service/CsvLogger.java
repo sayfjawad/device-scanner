@@ -25,9 +25,9 @@ public class CsvLogger {
 
             for (DeviceRecord device : devices) {
                 final String csvRecord = String.format("%s,%s,%s%n",
-                        device.getMacAddress(),
-                        device.getSignalStrength(),
-                        device.getTimestamp().toString());
+                        device.macAddress(),
+                        device.signalStrength(),
+                        device.timestamp().toString());
                 log.info(String.format("( %s )",csvRecord));
                 writer.write(csvRecord);
             }

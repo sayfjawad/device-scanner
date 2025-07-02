@@ -1,8 +1,7 @@
 package nl.multicode.devicescanner.wifi.scanner;
 
-import nl.multicode.devicescanner.wifi.model.DeviceRecord;
-import java.util.List;
+import nl.multicode.devicescanner.wifi.model.WifiScanResult;
 
 public interface WifiScanner {
-    List<DeviceRecord> scan();
+    WifiScanResult scan(String scanningDeviceName);
 }

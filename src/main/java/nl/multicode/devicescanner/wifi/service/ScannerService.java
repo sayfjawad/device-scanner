@@ -1,11 +1,9 @@
 package nl.multicode.devicescanner.wifi.service;
 
-import java.io.File;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.multicode.devicescanner.config.DeviceScannerConfig;
-import nl.multicode.devicescanner.wifi.model.DeviceRecord;
+import nl.multicode.devicescanner.wifi.model.WifiScanResult;
 import nl.multicode.devicescanner.wifi.scanner.WifiScanner;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
@@ -16,7 +14,6 @@ import org.springframework.stereotype.Service;
 public class ScannerService implements CommandLineRunner {
 
     private final WifiScanner scanner;
-    private final CsvLogger logger;
     private final DeviceScannerConfig config;
 
     @Override
@@ -25,14 +22,16 @@ public class ScannerService implements CommandLineRunner {
         while (true) {
             try {
                 System.out.println("Starting new scan...");
-                List<DeviceRecord> results = scanner.scan();
-                logger.write(results, new File(config.getOutputFile()));
-                System.out.println("Devices found: " + results.size());
+                WifiScanResult results = scanner.scan(config.getInterfaceName());
+                log.info("Found {} client devices & {} access points", results.getClients().size(),
+                        results.getAccessPoints().size());
+//                logger.write(results, new File(config.getOutputFile()));
+//                System.out.println("Devices found: " + results.size());
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Error during scan", e);
             }
             try {
-                Thread.sleep(2000); // Pause between scans
+                Thread.sleep(config.getPauseDuration()); // Pause between scans
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
