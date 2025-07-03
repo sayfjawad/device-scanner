@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 public class AirodumpDataParser {
 
     private final AccessPointMapper accessPointMapper;
-    private final ClientDeviceMapper deviceMapper;
     private final ClientDeviceMapper clientDeviceMapper;
 
     public WifiScanResult parse(File file) {

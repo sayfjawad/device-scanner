@@ -1,13 +1,14 @@
 package nl.multicode.devicescanner.wifi.scanner;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.multicode.devicescanner.wifi.model.WifiScanResult;
 import nl.multicode.devicescanner.wifi.parser.AirodumpDataParser;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -22,8 +23,8 @@ public class AirodumpNgScanner implements WifiScanner {
 
     @Override
     public WifiScanResult scan(final String wifiAdapterName) {
-        ensureScanDirExists();
 
+        ensureScanDirExists();
         try {
             ProcessBuilder pb = new ProcessBuilder(
                     "sudo", "airodump-ng",
@@ -37,9 +38,8 @@ public class AirodumpNgScanner implements WifiScanner {
             Thread.sleep(SCAN_DURATION_SECONDS * 1000);
             process.destroy();
             process.waitFor();
-
-            return parser.parse(new File(TEMP_SCAN_FILE + "-01.csv"));
-
+            File latestCsvFile = getLatestScanCsvFile(new File(SCAN_DIR));
+            return parser.parse(latestCsvFile);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Scanning failed", e);
         } finally {
@@ -48,6 +48,7 @@ public class AirodumpNgScanner implements WifiScanner {
     }
 
     private void ensureScanDirExists() {
+
         try {
             Files.createDirectories(new File(SCAN_DIR).toPath());
         } catch (IOException e) {
@@ -56,15 +57,30 @@ public class AirodumpNgScanner implements WifiScanner {
     }
 
     private void cleanup() {
-        delete(TEMP_SCAN_FILE + "-01.csv");
-        delete(TEMP_SCAN_FILE + "-01.kismet.csv");
-        delete(TEMP_SCAN_FILE + "-01.kismet.netxml");
+        deleteByPattern("scan-\\d{2}\\.csv");
+        deleteByPattern("scan-\\d{2}\\.kismet\\.csv");
+        deleteByPattern("scan-\\d{2}\\.kismet\\.netxml");
     }
 
-    private void delete(String path) {
-        File file = new File(path);
-        if (file.exists() && !file.delete()) {
-            log.error("Warning: could not delete {}",  path);
+    private void deleteByPattern(String pattern) {
+        File[] files = new File(SCAN_DIR).listFiles((dir, name) -> name.matches(pattern));
+        if (files != null) {
+            for (File file : files) {
+                if (!file.delete()) {
+                    System.err.println("Warning: kon bestand niet verwijderen: " + file.getAbsolutePath());
+                }
+            }
         }
+    }
+
+    private File getLatestScanCsvFile(File directory) {
+
+        File[] files = directory.listFiles((dir, name) -> name.matches("scan-\\d{2}\\.csv"));
+        if (files == null || files.length == 0) {
+            throw new RuntimeException(
+                    "Geen scan CSV-bestand gevonden in: " + directory.getAbsolutePath());
+        }
+        Arrays.sort(files, Comparator.comparingLong(File::lastModified).reversed());
+        return files[0]; // meest recent gewijzigde bestand
     }
 }
